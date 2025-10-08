@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    tools:context=".onboarding.DietFragment">
+
+    <TextView
+        android:id="@+id/textViewTitle"
+        style="@style/OnboardingTitleText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select the type of diet that best describes you:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/textViewTitle"
+        app:layout_constraintBottom_toTopOf="@id/buttonNext">
+
+        <RadioGroup
+            android:id="@+id/radioGroupDiet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton style="@style/OnboardingRadioButtonCard" android:text="Omnivore\nI eat meat and almost everything" />
+            <RadioButton style="@style/OnboardingRadioButtonCard" android:text="Flexitarian\nI try to reduce meat consumption" />
+            <RadioButton style="@style/OnboardingRadioButtonCard" android:text="Pescetarian\nI don't eat meat, but I eat fish" />
+            <RadioButton style="@style/OnboardingRadioButtonCard" android:text="Vegetarian\nI don't eat meat and fish" />
+            <RadioButton style="@style/OnboardingRadioButtonCard" android:text="Vegan\nI only eat plant-based food" />
+            <RadioButton style="@style/OnboardingRadioButtonCard" android:text="Other\nMy diet is not represented in the list" />
+
+        </RadioGroup>
+    </ScrollView>
+
+
+    <Button
+        android:id="@+id/buttonNext"
+        style="@style/OnboardingNextButton"
+        android:text="Next"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

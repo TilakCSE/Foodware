@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/textViewTitle"
+        style="@style/OnboardingTitleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="What's your main goal?"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <RadioGroup
+        android:id="@+id/radioGroupGoal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:layout_constraintTop_toBottomOf="@id/textViewTitle">
+
+        <RadioButton
+            android:id="@+id/radioEatBalanced"
+            style="@style/OnboardingRadioButtonCard"
+            android:text="Eat balanced" />
+
+        <RadioButton
+            android:id="@+id/radioLoseWeight"
+            style="@style/OnboardingRadioButtonCard"
+            android:text="Lose weight" />
+
+        <RadioButton
+            android:id="@+id/radioGainMuscle"
+            style="@style/OnboardingRadioButtonCard"
+            android:text="Gain muscle" />
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/buttonNext"
+        style="@style/OnboardingNextButton"
+        android:text="Next"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="420dp"
+            android:orientation="vertical">
+
+            <!-- Header Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍳 Pantry Optimizer"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#2C3E50"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add ingredients you have at home to find the best recipes to cook"
+                android:textSize="14sp"
+                android:textColor="#7F8C8D"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Input Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Pantry Items"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#34495E"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Examples: '2 eggs', '200g paneer', 'tomato', '1 cup rice'"
+                android:textSize="12sp"
+                android:textColor="#95A5A6"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/rounded_input_background"
+                android:padding="4dp">
+                <EditText
+                    android:id="@+id/etPantry"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:hint="Add pantry item"
+                    android:background="@android:color/transparent"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:textSize="14sp" />
+                <Button
+                    android:id="@+id/btnAddPantry"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="Add"
+                    android:textColor="@android:color/white"
+                    android:background="@drawable/rounded_button_background"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="80dp" />
+            </LinearLayout>
+
+            <!-- Current Pantry Display -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current Pantry"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#34495E"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/txtPantry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_text_background"
+                android:padding="16dp"
+                android:text="No items in pantry yet"
+                android:textColor="#7F8C8D"
+                android:minHeight="80dp"
+                android:gravity="center" />
+
+            <!-- Optimization Button -->
+            <Button
+                android:id="@+id/btnOptimize"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="32dp"
+                android:text="🔍 Find Best Recipe Plan"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:background="@drawable/rounded_primary_button"
+                android:elevation="4dp" />
+
+            <!-- Results Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Optimization Results"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#34495E"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/txtResults"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_text_background"
+                android:padding="16dp"
+                android:text="Click 'Find Best Recipe Plan' to see optimized suggestions"
+                android:textColor="#7F8C8D"
+                android:minHeight="120dp"
+                android:gravity="center" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+</ScrollView>
+
+
