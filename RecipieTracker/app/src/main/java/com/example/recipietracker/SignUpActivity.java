@@ -112,6 +112,11 @@ public class SignUpActivity extends AppCompatActivity {
             }
             startActivity(emailIntent);
         });
+
+        // --- ADD THIS BLOCK FOR NAVIGATION ---
+        findViewById(R.id.textViewSignIn).setOnClickListener(v -> {
+            startActivity(new Intent(SignUpActivity.this, SignInActivity.class));
+        });
     }
 
     // This method is required to pass the result back to the Facebook SDK
@@ -169,8 +174,11 @@ public class SignUpActivity extends AppCompatActivity {
         }
     }
 
+    // In SignUpActivity.java
+
     private void navigateToDashboard() {
-        Intent intent = new Intent(this, DashboardActivity.class);
+        // Change DashboardActivity.class to MainActivity.class
+        Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

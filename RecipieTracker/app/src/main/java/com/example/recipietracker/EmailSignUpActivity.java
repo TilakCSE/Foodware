@@ -91,8 +91,11 @@ public class EmailSignUpActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Toast.makeText(EmailSignUpActivity.this, "Failed to save user info.", Toast.LENGTH_SHORT).show());
     }
 
+    // In EmailSignUpActivity.java
+
     private void navigateToDashboard() {
-        Intent intent = new Intent(EmailSignUpActivity.this, DashboardActivity.class);
+        // Change DashboardActivity.class to MainActivity.class
+        Intent intent = new Intent(EmailSignUpActivity.this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

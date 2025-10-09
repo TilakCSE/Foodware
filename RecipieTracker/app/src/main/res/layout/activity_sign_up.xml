@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
+    android:background="?attr/colorSurface"
     tools:context=".SignUpActivity">
 
     <ImageButton
@@ -13,6 +14,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_close"
+        app:tint="?attr/colorOnSurface"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -23,7 +25,7 @@
         android:layout_marginTop="64dp"
         android:fontFamily="@font/almendra"
         android:text="Foodware"
-        android:textColor="#3F2D7D"
+        android:textColor="?attr/colorPrimary"
         android:textSize="36sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -36,7 +38,7 @@
         android:layout_marginTop="16dp"
         android:gravity="center"
         android:text="Sign up to save your preferences and get the most of Foodware. It's free!"
-        android:textColor="#555"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -49,11 +51,11 @@
         android:layout_height="60dp"
         android:layout_marginTop="32dp"
         android:text="Sign up with Google"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         app:icon="@drawable/ic_logo_google"
         app:iconTint="@null"
         app:layout_constraintTop_toBottomOf="@id/textViewSubtitle"
-        app:strokeColor="#E0E0E0" />
+        app:strokeColor="?attr/colorOutline" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonSignUpFacebook"
@@ -62,11 +64,11 @@
         android:layout_height="60dp"
         android:layout_marginTop="16dp"
         android:text="Sign up with Facebook"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         app:icon="@drawable/ic_logo_facebook"
         app:iconTint="@null"
         app:layout_constraintTop_toBottomOf="@id/buttonSignUpGoogle"
-        app:strokeColor="#E0E0E0" />
+        app:strokeColor="?attr/colorOutline" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonSignUpEmail"
@@ -75,10 +77,11 @@
         android:layout_height="60dp"
         android:layout_marginTop="16dp"
         android:text="Sign up with Email"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         app:icon="@drawable/ic_email"
+        app:iconTint="?attr/colorOnSurface"
         app:layout_constraintTop_toBottomOf="@id/buttonSignUpFacebook"
-        app:strokeColor="#E0E0E0" />
+        app:strokeColor="?attr/colorOutline" />
 
 
     <LinearLayout
@@ -94,7 +97,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Already a user? "
-            android:textColor="#555"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="16sp" />
 
         <TextView
@@ -102,7 +105,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sign in"
-            android:textColor="#3F2D7D"
+            android:textColor="?attr/colorPrimary"
             android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>

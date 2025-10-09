@@ -29,11 +29,10 @@ public class WelcomeActivity extends AppCompatActivity {
         });
 
         // Set up click listener for the "Sign in" text
+        // In WelcomeActivity.java and SignUpActivity.java
+
         signInText.setOnClickListener(v -> {
-            // For now, let's also go to the dashboard. Later, this could go to a LoginActivity.
-            Intent intent = new Intent(WelcomeActivity.this, DashboardActivity.class);
-            startActivity(intent);
-            finish();
+            startActivity(new Intent(this, SignInActivity.class));
         });
     }
 }

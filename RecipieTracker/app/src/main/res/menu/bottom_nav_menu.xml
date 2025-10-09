@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_cook"
+        android:icon="@drawable/ic_cook"
+        android:title="Cook" />
+    <item
+        android:id="@+id/navigation_plan"
+        android:icon="@drawable/ic_plan"
+        android:title="Plan" />
+    <item
+        android:id="@+id/navigation_journal"
+        android:icon="@drawable/ic_journal"
+        android:title="Journal" />
+    <item
+        android:id="@+id/navigation_learn"
+        android:icon="@drawable/ic_learn"
+        android:title="Learn" />
+    <item
+        android:id="@+id/navigation_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="Profile" />
+</menu>

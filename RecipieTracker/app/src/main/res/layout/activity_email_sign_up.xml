@@ -4,7 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:background="?attr/colorSurface"
+    android:padding="24dp"
+    tools:context=".EmailSignUpActivity">
 
     <TextView
         android:id="@+id/textViewTitle"
@@ -79,13 +81,24 @@
             android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
-
     <Button
         android:id="@+id/buttonCreateAccount"
         style="@style/OnboardingNextButton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
         android:text="Create account"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/legalText"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/legalText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="To sign up you must accept our Terms and conditions and Privacy policy"
+        android:gravity="center"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="595dp" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
