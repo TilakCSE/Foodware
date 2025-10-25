@@ -7,6 +7,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class HorizontalRecipeAdapter extends RecyclerView.Adapter<HorizontalRecipeAdapter.ViewHolder> {
@@ -24,11 +27,17 @@ public class HorizontalRecipeAdapter extends RecyclerView.Adapter<HorizontalReci
         return new ViewHolder(view);
     }
 
+    // Inside onBindViewHolder in HorizontalRecipeAdapter.java
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         RecipeItem item = recipeList.get(position);
         holder.title.setText(item.getTitle());
-        holder.image.setImageResource(item.getImageResId()); // Or use a library like Glide to load from a URL
+
+        // Use Glide to load the image from a URL
+        Glide.with(holder.itemView.getContext())
+                .load(item.getImageUrl())
+                .placeholder(R.drawable.placeholder_food) // Show a placeholder while loading
+                .into(holder.image);
     }
 
     @Override

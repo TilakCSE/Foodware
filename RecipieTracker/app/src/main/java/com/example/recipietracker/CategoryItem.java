@@ -2,18 +2,15 @@ package com.example.recipietracker;
 
 public class CategoryItem {
     private String title;
-    private int imageResId;
+    private String imageUrl;
 
-    public CategoryItem(String title, int imageResId) {
+    public CategoryItem() {} // Needed for Firestore
+
+    public CategoryItem(String title, String imageUrl) {
         this.title = title;
-        this.imageResId = imageResId;
+        this.imageUrl = imageUrl;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public int getImageResId() {
-        return imageResId;
-    }
+    public String getTitle() { return title; }
+    public String getImageUrl() { return imageUrl; }
 }

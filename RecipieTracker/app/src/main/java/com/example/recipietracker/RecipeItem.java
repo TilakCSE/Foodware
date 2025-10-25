@@ -2,18 +2,15 @@ package com.example.recipietracker;
 
 public class RecipeItem {
     private String title;
-    private int imageResId; // We'll use local drawable IDs for now
+    private String imageUrl;
 
-    public RecipeItem(String title, int imageResId) {
+    public RecipeItem() {} // Needed for Firestore
+
+    public RecipeItem(String title, String imageUrl) {
         this.title = title;
-        this.imageResId = imageResId;
+        this.imageUrl = imageUrl;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public int getImageResId() {
-        return imageResId;
-    }
+    public String getTitle() { return title; }
+    public String getImageUrl() { return imageUrl; }
 }
