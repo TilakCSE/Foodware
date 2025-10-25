@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="?attr/colorSurface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        tools:context=".AddOwnRecipeActivity">
+
+        <TextView
+            style="@style/OnboardingTitleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Own Recipe" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/titleLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:hint="Title">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/recipeTitleEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Picture (optional)"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <ImageView
+            android:id="@+id/recipeImageView"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="8dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_add_circle"
+            android:background="?attr/colorSurfaceVariant"
+            android:contentDescription="Add recipe picture"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/descriptionLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:hint="Description (optional)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/recipeDescriptionEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top"
+                android:minLines="3"
+                android:inputType="textMultiLine"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Servings"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+            <Button android:id="@+id/buttonServingsMinus" style="@style/Widget.Material3.Button.IconButton.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" app:icon="@drawable/ic_remove" />
+            <TextView android:id="@+id/servingsTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2 servings" android:layout_marginHorizontal="16dp" android:textAppearance="?attr/textAppearanceBodyLarge"/>
+            <Button android:id="@+id/buttonServingsPlus" style="@style/Widget.Material3.Button.IconButton.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" app:icon="@drawable/ic_add" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Ingredients"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/ingredientsLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Type ingredients (e.g., 1 cup flour\n2 eggs\n1/2 tsp salt)" >
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ingredientsEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top"
+                android:minLines="5"
+                android:inputType="textMultiLine"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Instructions (optional)"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/instructionsLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Add steps (one per line)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/instructionsEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top"
+                android:minLines="5"
+                android:inputType="textMultiLine"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tipsLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:hint="Tips &amp; Tricks (optional)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/tipsEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top"
+                android:minLines="3"
+                android:inputType="textMultiLine"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Difficulty (optional)"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleGroupDifficulty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="false"
+            android:layout_marginTop="8dp">
+            <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/buttonEasy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Easy"/>
+            <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/buttonMedium" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Medium"/>
+            <Button style="?attr/materialButtonOutlinedStyle" android:id="@+id/buttonHigh" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="High"/>
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Time (optional)"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+            <Button android:id="@+id/buttonTimeMinus" style="@style/Widget.Material3.Button.IconButton.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" app:icon="@drawable/ic_remove" />
+            <TextView android:id="@+id/timeTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 minutes" android:layout_marginHorizontal="16dp" android:textAppearance="?attr/textAppearanceBodyLarge"/>
+            <Button android:id="@+id/buttonTimePlus" style="@style/Widget.Material3.Button.IconButton.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" app:icon="@drawable/ic_add" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Occasion (optional)"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <RadioGroup
+            android:id="@+id/radioGroupOccasion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+            <RadioButton android:id="@+id/radioBreakfast" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Breakfast" />
+            <RadioButton android:id="@+id/radioLunch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Lunch" />
+            <RadioButton android:id="@+id/radioDinner" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dinner" />
+            <RadioButton android:id="@+id/radioSnack" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Snack" />
+            <RadioButton android:id="@+id/radioDessert" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dessert" />
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/buttonSaveRecipe"
+            style="@style/OnboardingNextButton"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="24dp"
+            android:text="Save" />
+
+    </LinearLayout>
+</ScrollView>

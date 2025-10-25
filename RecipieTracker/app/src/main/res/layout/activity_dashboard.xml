@@ -115,6 +115,6 @@
         android:contentDescription="Add Recipe"
         app:layout_anchor="@id/appBarLayout"
         app:layout_anchorGravity="bottom|end"
-        app:srcCompat="@drawable/ic_add_24" />
+        app:srcCompat="@drawable/ic_add" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
