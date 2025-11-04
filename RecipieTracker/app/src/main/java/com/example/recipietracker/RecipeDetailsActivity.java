@@ -20,8 +20,18 @@ import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
+import android.content.DialogInterface;
+import android.widget.Button;
+import androidx.appcompat.app.AlertDialog;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
 import java.util.Map;
 import java.util.Locale; // Import Locale
 
@@ -36,6 +46,9 @@ public class RecipeDetailsActivity extends AppCompatActivity {
     private RatingBar ratingBar; // Add RatingBar
     private TextView authorTextView; // Add Author TextView
     private CollapsingToolbarLayout collapsingToolbarLayout;
+
+    private String recipeAuthorId;
+    private Button registerMealButton;
     private TabLayout tabLayout;
     private LinearLayout ingredientsInstructionsContainer;
 
@@ -44,12 +57,28 @@ public class RecipeDetailsActivity extends AppCompatActivity {
     private String recipeId;
     private DocumentSnapshot currentRecipeDoc; // Store the fetched document
 
+    private FirebaseAuth mAuth;
+    private String currentUserId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_details);
 
         db = FirebaseFirestore.getInstance();
+
+        mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            currentUserId = currentUser.getUid();
+        } else {
+            // Handle case where user is not logged in, though they shouldn't be here
+            Log.e(TAG, "User is not logged in!");
+            Toast.makeText(this, "You must be logged in", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         recipeId = getIntent().getStringExtra("RECIPE_ID");
 
         findViews(); // Find all UI elements
@@ -85,6 +114,14 @@ public class RecipeDetailsActivity extends AppCompatActivity {
         tabLayout = findViewById(R.id.detailTabLayout);
         ingredientsInstructionsContainer = findViewById(R.id.ingredientsInstructionsContainer);
         tipsTextView = findViewById(R.id.detailTipsText);
+        registerMealButton = findViewById(R.id.registerMealButton);
+        registerMealButton.setOnClickListener(v -> {
+            if (currentUserId != null && !currentUserId.isEmpty()) {
+                showListSelectionDialog();
+            } else {
+                Toast.makeText(this, "Error: Could not find user.", Toast.LENGTH_SHORT).show();
+            }
+        });
         // Find other views like buttons if needed
     }
 
@@ -133,6 +170,7 @@ public class RecipeDetailsActivity extends AppCompatActivity {
                     if (documentSnapshot.exists()) {
                         Log.d(TAG, "Recipe data fetched successfully.");
                         currentRecipeDoc = documentSnapshot;
+                        this.recipeAuthorId = currentRecipeDoc.getString("userId");
                         populateUI(currentRecipeDoc);
                     } else {
                         Log.w(TAG, "No such document found at the specified path.");
@@ -144,6 +182,78 @@ public class RecipeDetailsActivity extends AppCompatActivity {
                     Log.e(TAG, "Error fetching recipe", e);
                     Toast.makeText(this, "Error loading recipe details.", Toast.LENGTH_SHORT).show();
                     finish();
+                });
+    }
+
+    private void showListSelectionDialog() {
+        // We already have currentUserId from onCreate
+
+        db.collection("users").document(currentUserId).collection("my_lists")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        Toast.makeText(this, "You have no lists. Create one in your profile!", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    // Create lists to hold the names and their corresponding IDs
+                    final List<String> listNames = new ArrayList<>();
+                    final List<String> listIds = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        String listName = doc.getString("listName");
+                        if (listName != null && !listName.isEmpty()) {
+                            listNames.add(listName);
+                            listIds.add(doc.getId()); // Store the document ID
+                        }
+                    }
+
+                    // Create an array adapter for the dialog
+                    CharSequence[] items = listNames.toArray(new CharSequence[0]);
+
+                    // Create the dialog
+                    new AlertDialog.Builder(this)
+                            .setTitle("Add to which list?")
+                            .setItems(items, (dialog, which) -> {
+                                // 'which' is the index of the item clicked
+                                String selectedListId = listIds.get(which);
+                                String selectedListName = listNames.get(which);
+
+                                // Call the method to save the recipe to this list
+                                saveRecipeToList(selectedListId, selectedListName);
+                            })
+                            .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                            .show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching user lists", e);
+                    Toast.makeText(this, "Error fetching lists: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void saveRecipeToList(String selectedListId, String selectedListName) {
+        if (recipeId == null) {
+            Toast.makeText(this, "Error: Recipe ID is missing.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Get the reference to the specific list document
+        DocumentReference listRef = db.collection("users").document(currentUserId)
+                .collection("my_lists").document(selectedListId);
+
+        Map<String, String> recipeReference = new HashMap<>();
+        recipeReference.put("recipeId", recipeId);
+        recipeReference.put("authorId", this.recipeAuthorId);
+
+        // Use FieldValue.arrayUnion() to add the recipe ID to the 'recipeIds' array
+        // This automatically prevents duplicates
+        listRef.update("recipes", FieldValue.arrayUnion(recipeReference))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Recipe " + recipeId + " added to list " + selectedListId);
+                    Toast.makeText(this, "Saved to " + selectedListName, Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    // ... (failure listener)
                 });
     }
 
@@ -163,6 +273,9 @@ public class RecipeDetailsActivity extends AppCompatActivity {
         List<Map<String, String>> ingredients = (List<Map<String, String>>) doc.get("ingredients");
         int ingredientCount = (ingredients != null) ? ingredients.size() : 0;
 
+        Long caloriesLong = doc.getLong("calories"); // Get as Long
+        int calories = (caloriesLong != null) ? caloriesLong.intValue() : 0;
+
         // Populate basic info
         collapsingToolbarLayout.setTitle(title);
         recipeTitleTextView.setText(title);
@@ -174,8 +287,7 @@ public class RecipeDetailsActivity extends AppCompatActivity {
         ingredientCountTextView.setText(String.valueOf(ingredientCount));
         difficultyTextView.setText(difficulty != null ? difficulty : "--");
         timeTextView.setText(time > 0 ? time + "'" : "--");
-        caloriesTextView.setText("--"); // Placeholder for calories
-
+        caloriesTextView.setText(calories > 0 ? String.valueOf(calories) : "--");
         // TODO: Populate RatingBar with actual rating data
 
         Glide.with(this)

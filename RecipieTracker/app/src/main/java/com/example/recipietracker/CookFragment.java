@@ -27,7 +27,9 @@ import java.util.List;
  * greeting, search, new recipes, community posts, and categories.
  * Implements OnRecipeClickListener to handle clicks on recipe cards.
  */
-public class CookFragment extends Fragment implements HorizontalRecipeAdapter.OnRecipeClickListener {
+public class CookFragment extends Fragment
+        implements HorizontalRecipeAdapter.OnRecipeClickListener,
+        CookAdapter.OnSectionClickListener {
 
     private static final String TAG = "CookFragment"; // Tag for logging
 
@@ -86,13 +88,39 @@ public class CookFragment extends Fragment implements HorizontalRecipeAdapter.On
         startActivity(intent);
     }
 
+    @Override
+    public void onCommunitySeeAllClick() {
+        Log.d(TAG, "Community 'See all' clicked!");
+        // We will create this Activity next
+        Intent intent = new Intent(getActivity(), CommunityFeedActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onCategoriesSeeAllClick() {
+        Log.d(TAG, "Categories 'See all' clicked!");
+        // This Activity already exists in your AndroidManifest!
+        Intent intent = new Intent(getActivity(), CategoriesActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onCategoryItemClick(CategoryItem category) {
+        Log.d(TAG, "Category item clicked: " + category.getTitle());
+        // We can navigate to the same CategoriesActivity, but pass the
+        // category name so it knows what to display.
+        Intent intent = new Intent(getActivity(), CategoriesActivity.class);
+        intent.putExtra("CATEGORY_NAME", category.getTitle());
+        startActivity(intent);
+    }
+
     /**
      * Sets up the RecyclerView with a GridLayoutManager configured for multiple span sizes
      * and initializes the CookAdapter.
      */
     private void setupRecyclerView() {
         // Initialize the adapter with the (currently empty) data list
-        adapter = new CookAdapter(items, this);
+        adapter = new CookAdapter(items, this, this);
 
         // Use a GridLayoutManager with 2 columns as the base layout
         GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 2);

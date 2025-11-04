@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout; // Import LinearLayout
 import android.widget.TextView;
 import android.widget.Toast;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -178,11 +179,24 @@ public class ProfileFragment extends Fragment {
                             TextView listName = cardView.findViewById(R.id.listNameTextView);
                             TextView recipeCount = cardView.findViewById(R.id.recipeCountTextView);
 
-                            listName.setText(doc.getString("listName"));
-                            // Get recipe count (defaults to 0 if field doesn't exist)
-                            List<String> recipeIds = (List<String>) doc.get("recipeIds");
-                            int count = (recipeIds != null) ? recipeIds.size() : 0;
+                            List<Map<String, Object>> recipes = (List<Map<String, Object>>) doc.get("recipes");
+                            int count = (recipes != null) ? recipes.size() : 0; // Use the new variable
+
+                            String listNameText = doc.getString("listName"); // Get list name
+                            String listId = doc.getId();
+
+                            listName.setText(listNameText);
                             recipeCount.setText(count + (count == 1 ? " recipe" : " recipes"));
+
+                            // --- 3. ADD THE CLICK LISTENER ---
+                            cardView.setOnClickListener(v -> {
+                                // Create a new Activity to show the list
+                                Intent intent = new Intent(getActivity(), ViewListActivity.class);
+                                // Pass the ID and Name to the new activity
+                                intent.putExtra("LIST_ID", listId);
+                                intent.putExtra("LIST_NAME", listNameText);
+                                startActivity(intent);
+                            });
 
                             listContainer.addView(cardView);
                         }

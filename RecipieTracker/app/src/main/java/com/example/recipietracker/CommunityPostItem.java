@@ -1,3 +1,5 @@
+// In CommunityPostItem.java
+
 package com.example.recipietracker;
 
 public class CommunityPostItem {
@@ -6,6 +8,9 @@ public class CommunityPostItem {
     private String comment;
     private String imageUrl;
 
+    private String originalRecipeId;
+    private String originalUserId;
+
     public CommunityPostItem() {} // For Firestore
 
     // --- Add getters for all fields ---
@@ -13,4 +18,7 @@ public class CommunityPostItem {
     public String getRecipeName() { return recipeName; }
     public String getComment() { return comment; }
     public String getImageUrl() { return imageUrl; }
+
+    public String getOriginalRecipeId() { return originalRecipeId; }
+    public String getOriginalUserId() { return originalUserId; }
 }

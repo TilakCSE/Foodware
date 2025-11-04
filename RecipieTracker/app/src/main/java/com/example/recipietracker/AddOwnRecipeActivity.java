@@ -16,6 +16,10 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.DialogInterface;
+import android.view.LayoutInflater;
+import androidx.appcompat.app.AlertDialog;
+import android.view.View;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -47,6 +51,8 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
 
     // UI Elements
     private EditText titleEditText, descriptionEditText, ingredientsEditText, instructionsEditText, tipsEditText;
+
+    private EditText categoryEditText;
     private ImageView recipeImageView;
     private TextView servingsTextView, timeTextView;
     private Button servingsMinus, servingsPlus, timeMinus, timePlus, saveButton;
@@ -57,11 +63,18 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
 
+    private EditText caloriesEditText;
+
+
+
     // State variables
     private int currentServings = 2;
     private int currentTime = 0;
     private Uri selectedImageUri = null; // URI of the selected/captured image
     private Uri cameraImageUri = null; // Temp URI for the camera to write to
+
+
+    private String userFirstName = "User";
 
     // --- ActivityResultLaunchers ---
     private final ActivityResultLauncher<Intent> galleryLauncher = registerForActivityResult(
@@ -117,6 +130,7 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
         updateTimeText();
         recipeImageView.setOnClickListener(v -> openImageChooser());
         saveButton.setOnClickListener(v -> saveRecipeToFirestore());
+        loadUserData();
     }
 
     /**
@@ -138,6 +152,8 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
         timePlus = findViewById(R.id.buttonTimePlus);
         occasionGroup = findViewById(R.id.radioGroupOccasion);
         saveButton = findViewById(R.id.buttonSaveRecipe);
+        caloriesEditText = findViewById(R.id.caloriesEditText);
+        categoryEditText = findViewById(R.id.categoryEditText);
     }
 
     /**
@@ -271,6 +287,28 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
         }
     }
 
+    private void loadUserData() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            return; // Not logged in
+        }
+
+        db.collection("users").document(currentUser.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String fetchedName = documentSnapshot.getString("firstName");
+                        if (fetchedName != null && !fetchedName.isEmpty()) {
+                            this.userFirstName = fetchedName;
+                            Log.d(TAG, "User's first name loaded: " + userFirstName);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching user data", e);
+                    // Will proceed with default "User"
+                });
+    }
+
 
     /**
      * Gathers all recipe data from the UI, validates it, and saves it to Firestore.
@@ -282,12 +320,25 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
             return;
         }
 
+        final String currentUserId = currentUser.getUid();
+
         // --- Get Text Data ---
         String title = titleEditText.getText().toString().trim();
         String description = descriptionEditText.getText().toString().trim();
         String ingredientsRaw = ingredientsEditText.getText().toString().trim();
         String instructionsRaw = instructionsEditText.getText().toString().trim();
         String tips = tipsEditText.getText().toString().trim();
+        String caloriesString = caloriesEditText.getText().toString().trim();
+        int calories = 0; // Default to 0
+        if (!caloriesString.isEmpty()) {
+            try {
+                calories = Integer.parseInt(caloriesString);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Invalid number for calories", e);
+                // ...
+            }
+        }
+
 
         // --- Basic Validation ---
         if (TextUtils.isEmpty(title)) {
@@ -297,16 +348,20 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
             ingredientsEditText.setError("Ingredients are required"); ingredientsEditText.requestFocus(); return;
         }
 
+        final int finalCalories = calories;
+        final String category = categoryEditText.getText().toString().trim();
+
         // --- Get Structured Data ---
         String difficulty = getSelectedDifficulty();
         String occasion = getSelectedOccasion();
         List<Map<String, String>> ingredientsList = parseIngredients(ingredientsRaw);
         List<String> instructionsList = parseInstructions(instructionsRaw);
 
+
         // --- Create Map for Firestore ---
         Map<String, Object> recipeData = new HashMap<>();
         recipeData.put("userId", currentUser.getUid());
-        recipeData.put("authorName", currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "Anonymous");
+        recipeData.put("authorName", this.userFirstName);
         recipeData.put("title", title);
         recipeData.put("description", description);
         recipeData.put("servings", currentServings);
@@ -318,6 +373,9 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
         recipeData.put("occasion", occasion);
         recipeData.put("imageUrl", selectedImageUri != null ? selectedImageUri.toString() : null); // Store URI string
         recipeData.put("timestamp", FieldValue.serverTimestamp());
+        recipeData.put("calories", calories);
+        recipeData.put("category", category);
+
 
         // --- Save to Firestore Subcollection ---
         db.collection("users").document(currentUser.getUid())
@@ -326,13 +384,77 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
                 .addOnSuccessListener(documentReference -> {
                     Log.d(TAG, "Recipe saved with ID: " + documentReference.getId());
                     Toast.makeText(AddOwnRecipeActivity.this, "Recipe saved!", Toast.LENGTH_SHORT).show();
-                    // TODO: Here you would start the image upload process using the documentReference.getId() and selectedImageUri
-                    finish(); // Go back for now
+
+                    // Get the data we need for the community post
+                    final String newRecipeId = documentReference.getId();
+                    final String recipeTitle = (String) recipeData.get("title");
+                    final String imageUrl = (String) recipeData.get("imageUrl");
+
+
+                    // Show the community post dialog INSTEAD of finishing
+                    showCommunityPostDialog(recipeTitle, imageUrl, finalCalories, newRecipeId, currentUserId, category);
+
+                    // REMOVE THE finish(); call from here
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error saving recipe document", e);
                     Toast.makeText(AddOwnRecipeActivity.this, "Error saving recipe details: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
+    }
+
+    private void showCommunityPostDialog(final String recipeName, final String imageUrl,
+                                         final int calories, final String recipeId,
+                                         final String userId, final String category) { // <-- Add category        // Inflate the custom layout
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_add_comment, null);
+        final EditText commentEditText = dialogView.findViewById(R.id.commentEditText);
+
+        // Create the dialog
+        new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setPositiveButton("Post", (dialog, which) -> {
+                    // User clicked "Post"
+                    String comment = commentEditText.getText().toString().trim();
+
+                    // Create the community post data object (as a Map)
+                    Map<String, Object> postData = new HashMap<>();
+                    postData.put("authorName", this.userFirstName); // Use the loaded name
+                    postData.put("recipeName", recipeName);
+                    postData.put("comment", comment.isEmpty() ? "Check out my new recipe!" : comment);
+                    postData.put("imageUrl", imageUrl);
+
+                    // We use FieldValue.serverTimestamp() here to avoid the Timestamp class issue
+                    postData.put("timestamp", FieldValue.serverTimestamp());
+                    postData.put("calories", calories);
+
+                    postData.put("originalRecipeId", recipeId);
+                    postData.put("originalUserId", userId);
+                    postData.put("category", category);
+
+                    // Save to the 'community_posts' collection
+                    db.collection("community_posts")
+                            .add(postData)
+                            .addOnSuccessListener(docRef -> {
+                                Log.d(TAG, "Posted to community with ID: " + docRef.getId());
+                                Toast.makeText(this, "Posted to community!", Toast.LENGTH_SHORT).show();
+                                finish(); // Now we finish the activity
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error posting to community", e);
+                                Toast.makeText(this, "Could not post to community.", Toast.LENGTH_SHORT).show();
+                                finish(); // Still finish the activity
+                            });
+                })
+                .setNegativeButton("No, thanks", (dialog, which) -> {
+                    // User clicked "No, thanks"
+                    dialog.dismiss();
+                    finish(); // Finish the activity
+                })
+                .setOnCancelListener(dialog -> {
+                    // User clicked outside the dialog
+                    finish(); // Also finish the activity
+                })
+                .show();
     }
 
     // --- Helper Methods to Get Selections ---

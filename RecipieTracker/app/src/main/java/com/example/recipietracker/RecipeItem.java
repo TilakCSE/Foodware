@@ -8,6 +8,10 @@ public class RecipeItem {
     private String id;
     private String title;
     private String imageUrl;
+
+    private String userId;
+
+    private int calories;
     // Add any other fields you might want to display on the card later (e.g., cookTime)
 
     // Public no-argument constructor is required for Firestore deserialization
@@ -32,6 +36,8 @@ public class RecipeItem {
     public String getImageUrl() {
         return imageUrl;
     }
+    public int getCalories() { return calories; }
+    public String getUserId() { return userId; }
 
     // --- Setters (Optional but good practice) ---
     public void setId(String id) {
@@ -42,7 +48,11 @@ public class RecipeItem {
         this.title = title;
     }
 
+    public void setCalories(int calories) { this.calories = calories; }
+
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public void setUserId(String userId) { this.userId = userId; }
 }

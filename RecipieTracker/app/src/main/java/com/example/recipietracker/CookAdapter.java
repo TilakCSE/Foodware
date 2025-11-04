@@ -33,13 +33,24 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private final HorizontalRecipeAdapter.OnRecipeClickListener recipeClickListener;
 
+    private final OnSectionClickListener sectionClickListener;
+
+    public interface OnSectionClickListener {
+        void onCommunitySeeAllClick();
+        void onCategoriesSeeAllClick();
+        void onCategoryItemClick(CategoryItem category); // For clicking individual category items
+    }
+
     /**
      * Constructor for CookAdapter.
      * @param items The list of objects representing the rows to display.
      */
-    public CookAdapter(List<Object> items, HorizontalRecipeAdapter.OnRecipeClickListener listener) {
+    public CookAdapter(List<Object> items,
+                       HorizontalRecipeAdapter.OnRecipeClickListener recipeListener,
+                       OnSectionClickListener sectionListener) {
         this.items = items;
-        this.recipeClickListener = listener;
+        this.recipeClickListener = recipeListener;
+        this.sectionClickListener = sectionListener;
     }
 
     /**
@@ -147,14 +158,18 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 ((GreetingViewHolder) holder).bind(((GreetingItem) item).getText());
                 break;
             case VIEW_TYPE_SECTION_HEADER:
-                ((SectionHeaderViewHolder) holder).bind((String) item);
+                // --- (MODIFY THIS) ---
+                // 5. Pass the listener to the bind method
+                ((SectionHeaderViewHolder) holder).bind((String) item, sectionClickListener);
                 break;
             case VIEW_TYPE_RECIPE_LIST:
             case VIEW_TYPE_COMMUNITY_LIST:
                 ((HorizontalListViewHolder) holder).bind((List<?>) item, recipeClickListener);
                 break;
             case VIEW_TYPE_CATEGORY_GRID:
-                ((CategoryGridViewHolder) holder).bind((CategoryItem) item);
+                // --- (MODIFY THIS) ---
+                // 6. Pass the listener to the bind method
+                ((CategoryGridViewHolder) holder).bind((CategoryItem) item, sectionClickListener);
                 break;
             // No data binding needed for VIEW_TYPE_SEARCH or EmptyViewHolder
         }
@@ -201,10 +216,26 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             title = itemView.findViewById(R.id.sectionTitleTextView);
             seeAll = itemView.findViewById(R.id.seeAllTextView);
         }
-        void bind(String text) {
+        void bind(String text, final OnSectionClickListener listener) {
             title.setText(text);
-            // TODO: Add click listener for 'seeAll' TextView if needed
-            // seeAll.setOnClickListener(v -> { /* Navigate to full list screen */ });
+
+            // Based on your inspo image, "See all" is visible for Community and Categories
+            if (text.equals("Community") || text.equals("Categories")) {
+                seeAll.setVisibility(View.VISIBLE);
+
+                seeAll.setOnClickListener(v -> {
+                    if (listener == null) return;
+
+                    if (text.equals("Community")) {
+                        listener.onCommunitySeeAllClick();
+                    } else if (text.equals("Categories")) {
+                        listener.onCategoriesSeeAllClick();
+                    }
+                });
+            } else {
+                // Hide "See all" for other sections like "New recipes"
+                seeAll.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -246,7 +277,7 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             image = itemView.findViewById(R.id.categoryImageView);
         }
         /** Binds a CategoryItem data object to the views. */
-        void bind(CategoryItem item) {
+        void bind(CategoryItem item, final OnSectionClickListener listener) {
             if (item == null) {
                 Log.e(TAG, "Binding null CategoryItem in CategoryGridViewHolder");
                 title.setText("Error"); // Indicate an error state
@@ -264,6 +295,11 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     .error(R.drawable.placeholder_food)       // Image shown if loading fails
                     .into(image);
 
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onCategoryItemClick(item);
+                }
+            });
             // TODO: Add click listener for category items if needed
             // itemView.setOnClickListener(v -> { /* Handle category click */ });
         }
