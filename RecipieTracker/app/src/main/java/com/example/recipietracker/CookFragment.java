@@ -29,7 +29,8 @@ import java.util.List;
  */
 public class CookFragment extends Fragment
         implements HorizontalRecipeAdapter.OnRecipeClickListener,
-        CookAdapter.OnSectionClickListener {
+        CookAdapter.OnSectionClickListener,
+        CookAdapter.OnSearchQueryListener {
 
     private static final String TAG = "CookFragment"; // Tag for logging
 
@@ -42,6 +43,9 @@ public class CookFragment extends Fragment
 
     // Firebase
     private FirebaseFirestore db;
+
+    private List<Object> dashboardCache = new ArrayList<>();
+    private boolean isSearchActive = false;
 
     /**
      * Called to have the fragment instantiate its user interface view.
@@ -66,6 +70,18 @@ public class CookFragment extends Fragment
 
         setupRecyclerView(); // Configure the RecyclerView and its LayoutManager
         loadAllData(); // Start fetching data from Firestore
+    }
+
+    @Override
+    public void onSearchQueryChanged(String query) {
+        if (query.trim().isEmpty()) {
+            // Search is empty, restore the dashboard
+            restoreDashboard();
+        } else {
+            // Perform a search
+            isSearchActive = true;
+            performSearch(query.trim());
+        }
     }
 
     /**
@@ -120,7 +136,7 @@ public class CookFragment extends Fragment
      */
     private void setupRecyclerView() {
         // Initialize the adapter with the (currently empty) data list
-        adapter = new CookAdapter(items, this, this);
+        adapter = new CookAdapter(items, this, this, this);
 
         // Use a GridLayoutManager with 2 columns as the base layout
         GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 2);
@@ -187,11 +203,12 @@ public class CookFragment extends Fragment
                     String greeting = getGreeting() + ", " + name + "!";
                     items.add(new GreetingItem(greeting)); // Add GreetingItem object
                     items.add("SEARCH");                   // Add placeholder for search bar
-                    // Notify adapter about the first two items added
-                    adapter.notifyItemRangeInserted(0, 2);
+                    dashboardCache.clear();
+                    dashboardCache.add(items.get(0)); // Add GreetingItem
+                    dashboardCache.add(items.get(1)); // Add "SEARCH"
 
-                    // --- 2. Proceed to fetch New Recipes ---
-                    fetchNewRecipes();
+                    adapter.notifyItemRangeInserted(0, 2);
+                    fetchNewRecipes(true);
                 })
                 .addOnFailureListener(e -> {
                     // Handle failure to get user document (e.g., network error, permissions)
@@ -200,15 +217,20 @@ public class CookFragment extends Fragment
                     items.add(new GreetingItem(greeting));
                     items.add("SEARCH");
                     adapter.notifyItemRangeInserted(0, 2);
-                    // Still try to fetch the rest of the non-personalized data
-                    fetchNewRecipes();
+                    dashboardCache.clear();
+                    dashboardCache.add(items.get(0));
+                    dashboardCache.add(items.get(1));
+
+                    adapter.notifyItemRangeInserted(0, 2);
+                    fetchNewRecipes(true);
                 });
     }
 
     /** Fetches the "New Recipes" list from the public 'recipes' collection. */
-    private void fetchNewRecipes() {
-        int headerPos = items.size(); // Position where the header will be inserted
+    private void fetchNewRecipes(boolean cacheData) {
+        int headerPos = items.size();
         items.add("New recipes");
+        if (cacheData) dashboardCache.add(items.get(headerPos));
         adapter.notifyItemInserted(headerPos);
 
         db.collection("recipes").limit(5).get() // Fetch first 5 recipes
@@ -218,25 +240,26 @@ public class CookFragment extends Fragment
                     for (QueryDocumentSnapshot doc : recipesSnaps) {
                         newRecipes.add(doc.toObject(RecipeItem.class));
                     }
-                    items.add(newRecipes); // Add the List<RecipeItem> object
-                    adapter.notifyItemInserted(headerPos + 1); // Notify adapter about the list row
-
-                    // --- 3. Proceed to fetch Community Posts ---
-                    fetchCommunityPosts();
+                    items.add(newRecipes);
+                    if (cacheData) dashboardCache.add(items.get(headerPos + 1));
+                    adapter.notifyItemInserted(headerPos + 1);
+                    fetchCommunityPosts(cacheData); // Pass flag
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching New Recipes", e);
                     // Continue to next section even if this fails, maybe add empty list?
-                    items.add(new ArrayList<RecipeItem>()); // Add empty list on failure
+                    items.add(new ArrayList<RecipeItem>());
+                    if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-                    fetchCommunityPosts();
+                    fetchCommunityPosts(cacheData); // Pass flag
                 });
     }
 
     /** Fetches the "Community" posts list. */
-    private void fetchCommunityPosts() {
+    private void fetchCommunityPosts(boolean cacheData) {
         int headerPos = items.size();
         items.add("Community");
+        if (cacheData) dashboardCache.add(items.get(headerPos));
         adapter.notifyItemInserted(headerPos);
 
         db.collection("community_posts").orderBy("timestamp", Query.Direction.DESCENDING).limit(5).get()
@@ -246,24 +269,25 @@ public class CookFragment extends Fragment
                     for (QueryDocumentSnapshot doc : communitySnaps) {
                         communityItems.add(doc.toObject(CommunityPostItem.class));
                     }
-                    items.add(communityItems); // Add the List<CommunityPostItem> object
+                    items.add(communityItems);
+                    if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-
-                    // --- 4. Finally, fetch Categories ---
-                    fetchCategories();
+                    fetchCategories(cacheData); // Pass flag
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching Community Posts", e);
-                    items.add(new ArrayList<CommunityPostItem>()); // Add empty list on failure
+                    items.add(new ArrayList<CommunityPostItem>());
+                    if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-                    fetchCategories(); // Continue anyway
+                    fetchCategories(cacheData); // Pass flag
                 });
     }
 
     /** Fetches the "Categories" grid items. */
-    private void fetchCategories() {
+    private void fetchCategories(boolean cacheData) {
         int headerPos = items.size();
         items.add("Categories");
+        if (cacheData) dashboardCache.add(items.get(headerPos));
         adapter.notifyItemInserted(headerPos);
 
         db.collection("categories").get()
@@ -272,16 +296,57 @@ public class CookFragment extends Fragment
                     int categoryStartPos = headerPos + 1;
                     int categoryCount = 0;
                     for (QueryDocumentSnapshot doc : categorySnaps) {
-                        items.add(doc.toObject(CategoryItem.class)); // Add each CategoryItem individually
+                        CategoryItem catItem = doc.toObject(CategoryItem.class);
+                        items.add(catItem);
+                        if (cacheData) dashboardCache.add(catItem);
                         categoryCount++;
                     }
-                    adapter.notifyItemRangeInserted(categoryStartPos, categoryCount); // Notify for all category items added
-                    Log.d(TAG, "Data load complete. Total items: " + items.size());
+                    adapter.notifyItemRangeInserted(categoryStartPos, categoryCount);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching Categories", e);
                     // Data load finished, even if categories failed
                 });
+    }
+
+    private void performSearch(String query) {
+
+        final String lowercaseQuery = query.toLowerCase();
+        // Clear everything *except* the Greeting and Search Bar
+        int oldSize = items.size();
+        if (oldSize > 2) {
+            items.subList(2, oldSize).clear();
+            adapter.notifyItemRangeRemoved(2, oldSize - 2);
+        }
+
+        // Firestore prefix search query
+        // This finds all titles that start with the query text
+        db.collection("recipes")
+                .whereGreaterThanOrEqualTo("title_lowercase", lowercaseQuery)
+                .whereLessThanOrEqualTo("title_lowercase", lowercaseQuery + "\uf8ff")
+                .limit(10) // Limit to 10 results
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!isSearchActive) return; // User cleared search while this was loading
+
+                    // Add results one by one
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        RecipeItem item = doc.toObject(RecipeItem.class);
+                        items.add(item);
+                        adapter.notifyItemInserted(items.size() - 1);
+                    }
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error performing search", e));
+    }
+
+    private void restoreDashboard() {
+        if (!isSearchActive) return; // Already restored
+        isSearchActive = false;
+
+        // Clear all items and add back the cached dashboard items
+        items.clear();
+        items.addAll(dashboardCache);
+        adapter.notifyDataSetChanged();
     }
 
     /**

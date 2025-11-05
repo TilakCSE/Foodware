@@ -11,6 +11,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import java.util.List;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
 
 /**
  * The main RecyclerView adapter for the CookFragment.
@@ -25,7 +28,9 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public static final int VIEW_TYPE_SECTION_HEADER = 2;
     public static final int VIEW_TYPE_RECIPE_LIST = 3;      // For horizontal "New Recipes" list
     public static final int VIEW_TYPE_COMMUNITY_LIST = 4;   // For horizontal "Community" list
-    public static final int VIEW_TYPE_CATEGORY_GRID = 5;    // For individual category grid items
+    public static final int VIEW_TYPE_CATEGORY_GRID = 5;
+
+    public static final int VIEW_TYPE_SEARCH_RESULT = 6;// For individual category grid items
 
     private static final String TAG = "CookAdapter"; // Tag for logging
 
@@ -34,6 +39,12 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final HorizontalRecipeAdapter.OnRecipeClickListener recipeClickListener;
 
     private final OnSectionClickListener sectionClickListener;
+
+    private final OnSearchQueryListener searchListener;
+
+    public interface OnSearchQueryListener {
+        void onSearchQueryChanged(String query);
+    }
 
     public interface OnSectionClickListener {
         void onCommunitySeeAllClick();
@@ -47,10 +58,12 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
      */
     public CookAdapter(List<Object> items,
                        HorizontalRecipeAdapter.OnRecipeClickListener recipeListener,
-                       OnSectionClickListener sectionListener) {
+                       OnSectionClickListener sectionListener,
+                       OnSearchQueryListener searchListener) { // Add new listener
         this.items = items;
         this.recipeClickListener = recipeListener;
         this.sectionClickListener = sectionListener;
+        this.searchListener = searchListener;
     }
 
     /**
@@ -89,9 +102,11 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             return -1; // Or a specific VIEW_TYPE_EMPTY_LIST if you want to handle it visually
         } else if (item instanceof CategoryItem) {
             return VIEW_TYPE_CATEGORY_GRID;
-        } else if (item instanceof String) {
-            // Assume any other string is a section header (like "New recipes", "Community", "Categories")
+        } else if (item instanceof String) { // Section Headers
             return VIEW_TYPE_SECTION_HEADER;
+        } else if (item instanceof RecipeItem) {
+            // If it's a 'RecipeItem' directly in the list, it's a search result
+            return VIEW_TYPE_SEARCH_RESULT;
         }
 
         // If none of the above match, log a warning and return an invalid type
@@ -125,6 +140,11 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             case VIEW_TYPE_CATEGORY_GRID:
                 // Inflate the specific layout for category grid items
                 return new CategoryGridViewHolder(inflater.inflate(R.layout.item_category_grid_card, parent, false));
+            case VIEW_TYPE_SEARCH_RESULT:
+                // We re-use the layout we just made
+                return new SearchResultViewHolder(
+                        inflater.inflate(R.layout.item_saved_recipe, parent, false)
+                );
             default:
                 // For unknown view types or errors, return an empty ViewHolder
                 Log.e(TAG, "Creating EmptyViewHolder for unknown viewType: " + viewType);
@@ -171,6 +191,14 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 // 6. Pass the listener to the bind method
                 ((CategoryGridViewHolder) holder).bind((CategoryItem) item, sectionClickListener);
                 break;
+            case VIEW_TYPE_SEARCH_RESULT:
+                ((SearchResultViewHolder) holder).bind((RecipeItem) item, recipeClickListener);
+                break;
+            case VIEW_TYPE_SEARCH:
+                // --- 8. ADD BIND CALL FOR SEARCH ---
+                // Pass the listener to the ViewHolder
+                ((SearchViewHolder) holder).bind(searchListener);
+                break;
             // No data binding needed for VIEW_TYPE_SEARCH or EmptyViewHolder
         }
     }
@@ -201,9 +229,77 @@ public class CookAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /** ViewHolder for the static search bar row. */
     static class SearchViewHolder extends RecyclerView.ViewHolder {
+        // --- 9. MODIFY THIS VIEWHOLDER ---
+        EditText searchEditText;
+        TextWatcher currentWatcher; // To prevent multiple listeners
+
         public SearchViewHolder(@NonNull View itemView) {
             super(itemView);
-            // No specific views to find or bind
+            // Find the EditText from our new layout
+            searchEditText = itemView.findViewById(R.id.searchEditText);
+        }
+
+        void bind(OnSearchQueryListener listener) {
+            // Remove old listener to avoid memory leaks
+            if (currentWatcher != null) {
+                searchEditText.removeTextChangedListener(currentWatcher);
+            }
+
+            currentWatcher = new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    // Send the new query text to the Fragment
+                    if (listener != null) {
+                        listener.onSearchQueryChanged(s.toString());
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            };
+
+            searchEditText.addTextChangedListener(currentWatcher);
+        }
+        // --- END MODIFICATION ---
+    }
+
+    static class SearchResultViewHolder extends RecyclerView.ViewHolder {
+        ImageView imageView;
+        TextView titleTextView, authorTextView;
+
+        public SearchResultViewHolder(@NonNull View itemView) {
+            super(itemView);
+            imageView = itemView.findViewById(R.id.recipeImageView);
+            titleTextView = itemView.findViewById(R.id.recipeTitleTextView);
+            authorTextView = itemView.findViewById(R.id.recipeAuthorTextView);
+        }
+
+        void bind(RecipeItem recipe, HorizontalRecipeAdapter.OnRecipeClickListener listener) {
+            if (recipe == null) return;
+
+            titleTextView.setText(recipe.getTitle());
+
+            // We need to fetch the authorName, but RecipeItem doesn't have it.
+            // Let's get it from the 'recipes' collection (it's 'authorName')
+            // For now, we'll hide it. We can add this logic later if needed.
+            // (Your RecipeItem.java doesn't have authorName, so we'll just hide it)
+            authorTextView.setVisibility(View.GONE);
+
+            Glide.with(itemView.getContext())
+                    .load(recipe.getImageUrl())
+                    .placeholder(R.drawable.placeholder_food)
+                    .error(R.drawable.placeholder_food)
+                    .into(imageView);
+
+            // Use the main recipeClickListener from the fragment
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onRecipeClick(recipe.getId());
+                }
+            });
         }
     }
 

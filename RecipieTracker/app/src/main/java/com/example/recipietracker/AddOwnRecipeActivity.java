@@ -363,6 +363,7 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
         recipeData.put("userId", currentUser.getUid());
         recipeData.put("authorName", this.userFirstName);
         recipeData.put("title", title);
+        recipeData.put("title_lowercase", title.toLowerCase());
         recipeData.put("description", description);
         recipeData.put("servings", currentServings);
         recipeData.put("ingredients", ingredientsList);
@@ -420,6 +421,7 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
                     Map<String, Object> postData = new HashMap<>();
                     postData.put("authorName", this.userFirstName); // Use the loaded name
                     postData.put("recipeName", recipeName);
+                    postData.put("title_lowercase", recipeName.toLowerCase());
                     postData.put("comment", comment.isEmpty() ? "Check out my new recipe!" : comment);
                     postData.put("imageUrl", imageUrl);
 
