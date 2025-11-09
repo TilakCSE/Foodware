@@ -13,6 +13,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.util.Map;
 
+import com.google.android.material.card.MaterialCardView; // <-- 1. ADD THIS IMPORT
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -32,6 +34,8 @@ public class ProfileFragment extends Fragment {
     private static final String TAG = "ProfileFragment"; // For logging
 
     private ImageView profileImageView;
+
+    private MaterialCardView preferencesCard; // <-- 2. ADD THIS VARIABLE
     private TextView nameTextView, emailTextView;
     private TabLayout tabLayout;
     private FrameLayout tabContentContainer;
@@ -57,6 +61,13 @@ public class ProfileFragment extends Fragment {
         tabContentContainer = view.findViewById(R.id.tabContentContainer);
         MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
 
+        preferencesCard = view.findViewById(R.id.preferencesCard);
+        preferencesCard.setOnClickListener(v -> {
+            // We will create this activity next
+            Intent intent = new Intent(getActivity(), PreferencesActivity.class);
+            startActivity(intent);
+        });
+
         loadUserProfile();
         setupTabs();
 
@@ -64,19 +75,20 @@ public class ProfileFragment extends Fragment {
         toolbar.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.action_edit) {
-                Toast.makeText(getContext(), "Edit clicked", Toast.LENGTH_SHORT).show();
+                // We will create this activity next
+                Intent intent = new Intent(getActivity(), EditAccountActivity.class);
+                startActivity(intent);
                 return true;
+
             } else if (itemId == R.id.action_settings) {
-                // TODO: Add Logout functionality here
-                FirebaseAuth.getInstance().signOut();
-                // Navigate back to WelcomeActivity or SignInActivity
-                Intent intent = new Intent(getActivity(), WelcomeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                // We will create this activity next
+                Intent intent = new Intent(getActivity(), SettingsActivity.class);
                 startActivity(intent);
                 return true;
             }
             return false;
         });
+        // --- END OF MODIFICATION ---
     }
 
     /** Fetches user info from Firebase Auth and Firestore */

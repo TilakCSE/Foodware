@@ -41,9 +41,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date; // Import Date
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale; // Import Locale
 import java.util.Map;
+import java.util.Set;
 
 public class AddOwnRecipeActivity extends AppCompatActivity {
 
@@ -309,6 +311,19 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
                 });
     }
 
+    private List<String> generatePrefixes(String text) {
+        String[] words = text.toLowerCase().split(" ");
+        Set<String> prefixes = new HashSet<>();
+
+        for (String word : words) {
+            if (word.isEmpty()) continue;
+            for (int i = 1; i <= word.length(); i++) {
+                prefixes.add(word.substring(0, i));
+            }
+        }
+        return new ArrayList<>(prefixes);
+    }
+
 
     /**
      * Gathers all recipe data from the UI, validates it, and saves it to Firestore.
@@ -363,7 +378,7 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
         recipeData.put("userId", currentUser.getUid());
         recipeData.put("authorName", this.userFirstName);
         recipeData.put("title", title);
-        recipeData.put("title_lowercase", title.toLowerCase());
+        recipeData.put("search_prefixes", generatePrefixes(title));
         recipeData.put("description", description);
         recipeData.put("servings", currentServings);
         recipeData.put("ingredients", ingredientsList);
@@ -421,7 +436,7 @@ public class AddOwnRecipeActivity extends AppCompatActivity {
                     Map<String, Object> postData = new HashMap<>();
                     postData.put("authorName", this.userFirstName); // Use the loaded name
                     postData.put("recipeName", recipeName);
-                    postData.put("title_lowercase", recipeName.toLowerCase());
+                    postData.put("search_prefixes", generatePrefixes(recipeName));
                     postData.put("comment", comment.isEmpty() ? "Check out my new recipe!" : comment);
                     postData.put("imageUrl", imageUrl);
 

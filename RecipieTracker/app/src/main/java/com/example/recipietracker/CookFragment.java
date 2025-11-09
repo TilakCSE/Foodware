@@ -1,8 +1,8 @@
 package com.example.recipietracker;
 
-import android.content.Intent; // Import Intent
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log; // Import Log
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,11 +26,13 @@ import java.util.List;
  * Fragment for the main "Cook" screen, displaying various sections like
  * greeting, search, new recipes, community posts, and categories.
  * Implements OnRecipeClickListener to handle clicks on recipe cards.
+ * Implements OnSectionClickListener for "See all" clicks.
+ * Implements OnSearchQueryListener to handle live search.
  */
 public class CookFragment extends Fragment
         implements HorizontalRecipeAdapter.OnRecipeClickListener,
         CookAdapter.OnSectionClickListener,
-        CookAdapter.OnSearchQueryListener {
+        CookAdapter.OnSearchQueryListener { // Make sure this is implemented
 
     private static final String TAG = "CookFragment"; // Tag for logging
 
@@ -44,8 +46,11 @@ public class CookFragment extends Fragment
     // Firebase
     private FirebaseFirestore db;
 
+    // --- NEW/MODIFIED FIELDS FOR SEARCH ---
     private List<Object> dashboardCache = new ArrayList<>();
     private boolean isSearchActive = false;
+    private String lastQuery = ""; // Stores the most recent search query
+    // --- END NEW/MODIFIED FIELDS ---
 
     /**
      * Called to have the fragment instantiate its user interface view.
@@ -72,17 +77,26 @@ public class CookFragment extends Fragment
         loadAllData(); // Start fetching data from Firestore
     }
 
+    // --- THIS IS THE NEW, CORRECTED SEARCH LISTENER ---
+    /**
+     * Called by the CookAdapter whenever the text in the search bar changes.
+     * @param query The current text in the search bar.
+     */
     @Override
     public void onSearchQueryChanged(String query) {
-        if (query.trim().isEmpty()) {
-            // Search is empty, restore the dashboard
+        final String trimmedQuery = query.trim();
+        lastQuery = trimmedQuery; // Store the latest query text
+
+        if (trimmedQuery.isEmpty()) {
+            // Search is empty, restore the main dashboard
             restoreDashboard();
         } else {
-            // Perform a search
+            // Text is present, perform a search
             isSearchActive = true;
-            performSearch(query.trim());
+            performSearch(trimmedQuery);
         }
     }
+    // --- END NEW SEARCH LISTENER ---
 
     /**
      * Handles clicks on recipe items forwarded from the HorizontalRecipeAdapter.
@@ -101,13 +115,15 @@ public class CookFragment extends Fragment
         Intent intent = new Intent(getActivity(), RecipeDetailsActivity.class);
         // Pass the clicked recipe's ID as an extra
         intent.putExtra("RECIPE_ID", recipeId);
+        // We pass null for USER_ID because these are public recipes
+        intent.putExtra("USER_ID", (String) null);
         startActivity(intent);
     }
 
+    // --- (This section is for "See All" clicks) ---
     @Override
     public void onCommunitySeeAllClick() {
         Log.d(TAG, "Community 'See all' clicked!");
-        // We will create this Activity next
         Intent intent = new Intent(getActivity(), CommunityFeedActivity.class);
         startActivity(intent);
     }
@@ -115,7 +131,7 @@ public class CookFragment extends Fragment
     @Override
     public void onCategoriesSeeAllClick() {
         Log.d(TAG, "Categories 'See all' clicked!");
-        // This Activity already exists in your AndroidManifest!
+        // This launches "All Categories" mode
         Intent intent = new Intent(getActivity(), CategoriesActivity.class);
         startActivity(intent);
     }
@@ -123,19 +139,19 @@ public class CookFragment extends Fragment
     @Override
     public void onCategoryItemClick(CategoryItem category) {
         Log.d(TAG, "Category item clicked: " + category.getTitle());
-        // We can navigate to the same CategoriesActivity, but pass the
-        // category name so it knows what to display.
+        // This launches "Specific Category" mode
         Intent intent = new Intent(getActivity(), CategoriesActivity.class);
         intent.putExtra("CATEGORY_NAME", category.getTitle());
         startActivity(intent);
     }
+    // --- END "See All" section ---
 
     /**
      * Sets up the RecyclerView with a GridLayoutManager configured for multiple span sizes
      * and initializes the CookAdapter.
      */
     private void setupRecyclerView() {
-        // Initialize the adapter with the (currently empty) data list
+        // Initialize the adapter with all four listeners
         adapter = new CookAdapter(items, this, this, this);
 
         // Use a GridLayoutManager with 2 columns as the base layout
@@ -145,16 +161,14 @@ public class CookFragment extends Fragment
         layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
-                // Defensive check in case adapter/items are not ready or position is invalid
                 if (adapter == null || position < 0 || position >= adapter.getItemCount()) {
-                    return 2; // Default to full width to prevent crashes
+                    return 2; // Default to full width
                 }
-                // Ask the adapter for the view type at this position
                 switch (adapter.getItemViewType(position)) {
                     case CookAdapter.VIEW_TYPE_CATEGORY_GRID:
                         return 1; // Category items take 1 span (half width)
                     default:
-                        // All other types (Greeting, Search, Headers, Horizontal Lists) take 2 spans (full width)
+                        // Greeting, Search, Headers, Lists, and Search Results take 2 spans (full width)
                         return 2;
                 }
             }
@@ -170,72 +184,63 @@ public class CookFragment extends Fragment
      */
     private void loadAllData() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        // If user is not logged in, show minimal content (e.g., search bar only)
         if (currentUser == null) {
-            Log.w(TAG, "No authenticated user found. Cannot load personalized data.");
+            Log.w(TAG, "No authenticated user found.");
             items.clear();
             items.add("SEARCH"); // Still show search bar
-            // Optionally: Fetch public recipes/categories if the app supports anonymous browsing
             adapter.notifyDataSetChanged();
             return;
         }
 
-        // Clear the list before starting new fetches
         items.clear();
-        adapter.notifyDataSetChanged(); // Important to clear the view first
+        dashboardCache.clear(); // Clear cache
+        adapter.notifyDataSetChanged();
         Log.d(TAG, "Starting data load for user: " + currentUser.getUid());
 
-        // Chain the Firestore calls: Start with user data for the greeting
         db.collection("users").document(currentUser.getUid()).get()
                 .addOnSuccessListener(userDoc -> {
-                    // --- 1. User Greeting is fetched ---
                     Log.d(TAG, "User document fetched successfully.");
-                    String name = "User"; // Default name
+                    String name = "User";
                     if (userDoc.exists()) {
-                        String fetchedName = userDoc.getString("firstName"); // Use "firstName"
+                        String fetchedName = userDoc.getString("firstName");
                         if (fetchedName != null && !fetchedName.isEmpty()) {
                             name = fetchedName;
                         }
-                        Log.d(TAG, "User name found: " + name);
-                    } else {
-                        Log.w(TAG, "User document does not exist for UID: " + currentUser.getUid());
                     }
                     String greeting = getGreeting() + ", " + name + "!";
                     items.add(new GreetingItem(greeting)); // Add GreetingItem object
                     items.add("SEARCH");                   // Add placeholder for search bar
-                    dashboardCache.clear();
-                    dashboardCache.add(items.get(0)); // Add GreetingItem
-                    dashboardCache.add(items.get(1)); // Add "SEARCH"
 
-                    adapter.notifyItemRangeInserted(0, 2);
-                    fetchNewRecipes(true);
-                })
-                .addOnFailureListener(e -> {
-                    // Handle failure to get user document (e.g., network error, permissions)
-                    Log.e(TAG, "Error fetching user document for greeting", e);
-                    String greeting = getGreeting() + "!"; // Use default greeting
-                    items.add(new GreetingItem(greeting));
-                    items.add("SEARCH");
-                    adapter.notifyItemRangeInserted(0, 2);
-                    dashboardCache.clear();
+                    // Add the first two items to the dashboard cache
                     dashboardCache.add(items.get(0));
                     dashboardCache.add(items.get(1));
 
                     adapter.notifyItemRangeInserted(0, 2);
-                    fetchNewRecipes(true);
+                    fetchNewRecipes(true); // Start chain, store results in cache
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching user document for greeting", e);
+                    String greeting = getGreeting() + "!";
+                    items.add(new GreetingItem(greeting));
+                    items.add("SEARCH");
+
+                    dashboardCache.add(items.get(0));
+                    dashboardCache.add(items.get(1));
+
+                    adapter.notifyItemRangeInserted(0, 2);
+                    fetchNewRecipes(true); // Start chain anyway
                 });
     }
 
-    /** Fetches the "New Recipes" list from the public 'recipes' collection. */
+    /** Fetches the "New Recipes" list. */
     private void fetchNewRecipes(boolean cacheData) {
         int headerPos = items.size();
         items.add("New recipes");
         if (cacheData) dashboardCache.add(items.get(headerPos));
         adapter.notifyItemInserted(headerPos);
 
-        db.collection("recipes").limit(5).get() // Fetch first 5 recipes
+        db.collection("recipes").orderBy("timestamp", Query.Direction.DESCENDING).limit(5).get()
                 .addOnSuccessListener(recipesSnaps -> {
-                    Log.d(TAG, "New Recipes fetched successfully: " + recipesSnaps.size() + " items.");
                     List<RecipeItem> newRecipes = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : recipesSnaps) {
                         newRecipes.add(doc.toObject(RecipeItem.class));
@@ -243,15 +248,14 @@ public class CookFragment extends Fragment
                     items.add(newRecipes);
                     if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-                    fetchCommunityPosts(cacheData); // Pass flag
+                    fetchCommunityPosts(cacheData); // Chain next fetch
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching New Recipes", e);
-                    // Continue to next section even if this fails, maybe add empty list?
                     items.add(new ArrayList<RecipeItem>());
                     if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-                    fetchCommunityPosts(cacheData); // Pass flag
+                    fetchCommunityPosts(cacheData); // Chain next fetch
                 });
     }
 
@@ -264,7 +268,6 @@ public class CookFragment extends Fragment
 
         db.collection("community_posts").orderBy("timestamp", Query.Direction.DESCENDING).limit(5).get()
                 .addOnSuccessListener(communitySnaps -> {
-                    Log.d(TAG, "Community Posts fetched successfully: " + communitySnaps.size() + " items.");
                     List<CommunityPostItem> communityItems = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : communitySnaps) {
                         communityItems.add(doc.toObject(CommunityPostItem.class));
@@ -272,14 +275,14 @@ public class CookFragment extends Fragment
                     items.add(communityItems);
                     if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-                    fetchCategories(cacheData); // Pass flag
+                    fetchCategories(cacheData); // Chain next fetch
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error fetching Community Posts", e);
                     items.add(new ArrayList<CommunityPostItem>());
                     if (cacheData) dashboardCache.add(items.get(headerPos + 1));
                     adapter.notifyItemInserted(headerPos + 1);
-                    fetchCategories(cacheData); // Pass flag
+                    fetchCategories(cacheData); // Chain next fetch
                 });
     }
 
@@ -292,7 +295,6 @@ public class CookFragment extends Fragment
 
         db.collection("categories").get()
                 .addOnSuccessListener(categorySnaps -> {
-                    Log.d(TAG, "Categories fetched successfully: " + categorySnaps.size() + " items.");
                     int categoryStartPos = headerPos + 1;
                     int categoryCount = 0;
                     for (QueryDocumentSnapshot doc : categorySnaps) {
@@ -303,15 +305,16 @@ public class CookFragment extends Fragment
                     }
                     adapter.notifyItemRangeInserted(categoryStartPos, categoryCount);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching Categories", e);
-                    // Data load finished, even if categories failed
-                });
+                .addOnFailureListener(e -> Log.e(TAG, "Error fetching Categories", e));
     }
 
-    private void performSearch(String query) {
-
-        final String lowercaseQuery = query.toLowerCase();
+    // --- THIS IS THE NEW, CORRECTED SEARCH METHOD ---
+    /**
+     * Clears the list and performs a Firestore search for recipes
+     * using the 'search_prefixes' array.
+     * @param query The text to search for (e.g., "e", "eg", "egg")
+     */
+    private void performSearch(final String query) {
         // Clear everything *except* the Greeting and Search Bar
         int oldSize = items.size();
         if (oldSize > 2) {
@@ -319,15 +322,21 @@ public class CookFragment extends Fragment
             adapter.notifyItemRangeRemoved(2, oldSize - 2);
         }
 
-        // Firestore prefix search query
-        // This finds all titles that start with the query text
+        // 1. Convert the query to lowercase (it's already trimmed)
+        final String lowercaseQuery = query.toLowerCase();
+
+        // 2. Use the 'whereArrayContains' query on the 'search_prefixes' field
         db.collection("recipes")
-                .whereGreaterThanOrEqualTo("title_lowercase", lowercaseQuery)
-                .whereLessThanOrEqualTo("title_lowercase", lowercaseQuery + "\uf8ff")
+                .whereArrayContains("search_prefixes", lowercaseQuery)
                 .limit(10) // Limit to 10 results
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!isSearchActive) return; // User cleared search while this was loading
+                    // --- IMPORTANT ---
+                    // Check if the search is still active and if the query
+                    // hasn't changed since we started this network call.
+                    if (!isSearchActive || !lowercaseQuery.equals(lastQuery.toLowerCase())) {
+                        return; // A new, more recent search is active. Ignore these old results.
+                    }
 
                     // Add results one by one
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
@@ -339,15 +348,21 @@ public class CookFragment extends Fragment
                 .addOnFailureListener(e -> Log.e(TAG, "Error performing search", e));
     }
 
+    /**
+     * Restores the main dashboard from the cache when search is cleared.
+     */
     private void restoreDashboard() {
-        if (!isSearchActive) return; // Already restored
+        if (!isSearchActive && !items.isEmpty()) return; // Already restored
         isSearchActive = false;
+        lastQuery = ""; // Clear the last query
 
         // Clear all items and add back the cached dashboard items
         items.clear();
         items.addAll(dashboardCache);
         adapter.notifyDataSetChanged();
     }
+    // --- END NEW SEARCH METHODS ---
+
 
     /**
      * Determines the appropriate greeting ("Good morning", "Good afternoon", etc.)
