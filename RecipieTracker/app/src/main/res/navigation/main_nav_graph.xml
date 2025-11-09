@@ -12,26 +12,9 @@
         tools:layout="@layout/fragment_cook" />
 
     <fragment
-        android:id="@+id/navigation_plan"
-        android:name="com.example.recipietracker.PlanFragment"
-        android:label="Plan"
-        tools:layout="@layout/fragment_placeholder" />
-
-    <fragment
-        android:id="@+id/navigation_journal"
-        android:name="com.example.recipietracker.JournalFragment"
-        android:label="Journal"
-        tools:layout="@layout/fragment_placeholder" />
-
-    <fragment
-        android:id="@+id/navigation_learn"
-        android:name="com.example.recipietracker.LearnFragment"
-        android:label="Learn"
-        tools:layout="@layout/fragment_placeholder" />
-
-    <fragment
         android:id="@+id/navigation_profile"
         android:name="com.example.recipietracker.ProfileFragment"
         android:label="Profile"
-        tools:layout="@layout/fragment_placeholder" />
+        tools:layout="@layout/fragment_profile" />
+
 </navigation>

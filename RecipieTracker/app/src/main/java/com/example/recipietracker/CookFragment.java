@@ -11,13 +11,15 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import android.widget.Toast; // Import Toast
+ // Import Query
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
+import java.util.Arrays; // Import Arrays
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -46,11 +48,12 @@ public class CookFragment extends Fragment
     // Firebase
     private FirebaseFirestore db;
 
-    // --- NEW/MODIFIED FIELDS FOR SEARCH ---
     private List<Object> dashboardCache = new ArrayList<>();
     private boolean isSearchActive = false;
-    private String lastQuery = ""; // Stores the most recent search query
-    // --- END NEW/MODIFIED FIELDS ---
+    private String lastQuery = "";
+    private String userSkill; // e.g., "Middle"
+    private String userGoal;
+
 
     /**
      * Called to have the fragment instantiate its user interface view.
@@ -58,7 +61,6 @@ public class CookFragment extends Fragment
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Inflate the layout defined in fragment_cook.xml
         return inflater.inflate(R.layout.fragment_cook, container, false);
     }
 
@@ -69,12 +71,10 @@ public class CookFragment extends Fragment
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        db = FirebaseFirestore.getInstance(); // Get Firestore instance
-        recyclerView = view.findViewById(R.id.cookRecyclerView); // Find the RecyclerView in the layout
-
-        setupRecyclerView(); // Configure the RecyclerView and its LayoutManager
-        loadAllData(); // Start fetching data from Firestore
+        db = FirebaseFirestore.getInstance();
+        recyclerView = view.findViewById(R.id.cookRecyclerView);
+        setupRecyclerView();
+        loadAllData();
     }
 
     // --- THIS IS THE NEW, CORRECTED SEARCH LISTENER ---
@@ -85,13 +85,10 @@ public class CookFragment extends Fragment
     @Override
     public void onSearchQueryChanged(String query) {
         final String trimmedQuery = query.trim();
-        lastQuery = trimmedQuery; // Store the latest query text
-
+        lastQuery = trimmedQuery;
         if (trimmedQuery.isEmpty()) {
-            // Search is empty, restore the main dashboard
             restoreDashboard();
         } else {
-            // Text is present, perform a search
             isSearchActive = true;
             performSearch(trimmedQuery);
         }
@@ -113,10 +110,8 @@ public class CookFragment extends Fragment
 
         // Create an Intent to start the RecipeDetailsActivity
         Intent intent = new Intent(getActivity(), RecipeDetailsActivity.class);
-        // Pass the clicked recipe's ID as an extra
         intent.putExtra("RECIPE_ID", recipeId);
-        // We pass null for USER_ID because these are public recipes
-        intent.putExtra("USER_ID", (String) null);
+        intent.putExtra("USER_ID", (String) null); // Public recipe
         startActivity(intent);
     }
 
@@ -156,26 +151,23 @@ public class CookFragment extends Fragment
 
         // Use a GridLayoutManager with 2 columns as the base layout
         GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 2);
-
-        // Configure SpanSizeLookup to define how many columns each item type occupies
         layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
                 if (adapter == null || position < 0 || position >= adapter.getItemCount()) {
-                    return 2; // Default to full width
+                    return 2;
                 }
                 switch (adapter.getItemViewType(position)) {
                     case CookAdapter.VIEW_TYPE_CATEGORY_GRID:
-                        return 1; // Category items take 1 span (half width)
+                        return 1;
                     default:
-                        // Greeting, Search, Headers, Lists, and Search Results take 2 spans (full width)
                         return 2;
                 }
             }
         });
 
-        recyclerView.setLayoutManager(layoutManager); // Set the configured LayoutManager
-        recyclerView.setAdapter(adapter); // Set the adapter
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(adapter);
     }
 
     /**
@@ -206,12 +198,20 @@ public class CookFragment extends Fragment
                         if (fetchedName != null && !fetchedName.isEmpty()) {
                             name = fetchedName;
                         }
+
+                        // --- 1. LOAD PREFERENCES ---
+                        userSkill = userDoc.getString("skill"); // e.g., "Middle"
+                        userGoal = userDoc.getString("goal");   // e.g., "Lose weight"
+                        Log.d(TAG, "User prefs loaded: Skill=" + userSkill + ", Goal=" + userGoal);
+                        // --- END LOAD PREFERENCES ---
+
+                    } else {
+                        Log.w(TAG, "User document does not exist");
                     }
                     String greeting = getGreeting() + ", " + name + "!";
-                    items.add(new GreetingItem(greeting)); // Add GreetingItem object
-                    items.add("SEARCH");                   // Add placeholder for search bar
+                    items.add(new GreetingItem(greeting));
+                    items.add("SEARCH");
 
-                    // Add the first two items to the dashboard cache
                     dashboardCache.add(items.get(0));
                     dashboardCache.add(items.get(1));
 
@@ -223,10 +223,8 @@ public class CookFragment extends Fragment
                     String greeting = getGreeting() + "!";
                     items.add(new GreetingItem(greeting));
                     items.add("SEARCH");
-
                     dashboardCache.add(items.get(0));
                     dashboardCache.add(items.get(1));
-
                     adapter.notifyItemRangeInserted(0, 2);
                     fetchNewRecipes(true); // Start chain anyway
                 });
@@ -326,26 +324,53 @@ public class CookFragment extends Fragment
         final String lowercaseQuery = query.toLowerCase();
 
         // 2. Use the 'whereArrayContains' query on the 'search_prefixes' field
-        db.collection("recipes")
-                .whereArrayContains("search_prefixes", lowercaseQuery)
-                .limit(10) // Limit to 10 results
+        Query searchQuery = db.collection("recipes")
+                .whereArrayContains("search_prefixes", lowercaseQuery);
+
+        // 2. Add Skill filter
+        if (userSkill != null && !userSkill.isEmpty()) {
+            if (userSkill.equals("Beginner")) {
+                searchQuery = searchQuery.whereEqualTo("difficulty", "Easy");
+            } else if (userSkill.equals("Middle")) {
+                searchQuery = searchQuery.whereIn("difficulty", Arrays.asList("Easy", "Medium"));
+            }
+            // If "Advanced", we don't filter by difficulty
+        }
+
+        // 3. Add Goal (Calorie) filter
+        if (userGoal != null && userGoal.equals("Lose weight")) {
+            // We set an upper bound on calories
+            searchQuery = searchQuery.whereLessThanOrEqualTo("calories", 500);
+        }
+        // You could add more else-if blocks here, e.g.:
+        // else if (userGoal.equals("Gain muscle")) {
+        //     searchQuery = searchQuery.whereGreaterThanOrEqualTo("calories", 600);
+        // }
+
+        // 4. Set the limit and execute the query
+        searchQuery.limit(10)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    // --- IMPORTANT ---
-                    // Check if the search is still active and if the query
-                    // hasn't changed since we started this network call.
                     if (!isSearchActive || !lowercaseQuery.equals(lastQuery.toLowerCase())) {
-                        return; // A new, more recent search is active. Ignore these old results.
+                        return; // Old results, ignore
                     }
 
-                    // Add results one by one
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        Log.d(TAG, "No search results found with filters.");
+                        // Optional: show a "no results" message
+                    }
+
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         RecipeItem item = doc.toObject(RecipeItem.class);
                         items.add(item);
                         adapter.notifyItemInserted(items.size() - 1);
                     }
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Error performing search", e));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error performing filtered search", e);
+                    // This error is special. It's likely a missing index.
+                    Toast.makeText(getContext(), "Search failed. Check Firestore index.", Toast.LENGTH_LONG).show();
+                });
     }
 
     /**
@@ -354,9 +379,7 @@ public class CookFragment extends Fragment
     private void restoreDashboard() {
         if (!isSearchActive && !items.isEmpty()) return; // Already restored
         isSearchActive = false;
-        lastQuery = ""; // Clear the last query
-
-        // Clear all items and add back the cached dashboard items
+        lastQuery = "";
         items.clear();
         items.addAll(dashboardCache);
         adapter.notifyDataSetChanged();

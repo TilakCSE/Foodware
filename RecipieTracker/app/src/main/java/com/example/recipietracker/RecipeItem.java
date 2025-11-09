@@ -11,6 +11,8 @@ public class RecipeItem {
 
     private String userId;
 
+    private String difficulty;
+
     private int calories;
     // Add any other fields you might want to display on the card later (e.g., cookTime)
 
@@ -37,6 +39,8 @@ public class RecipeItem {
         return imageUrl;
     }
     public int getCalories() { return calories; }
+
+    public String getDifficulty() { return difficulty; }
     public String getUserId() { return userId; }
 
     // --- Setters (Optional but good practice) ---
@@ -55,4 +59,6 @@ public class RecipeItem {
     }
 
     public void setUserId(String userId) { this.userId = userId; }
+
+    public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
 }

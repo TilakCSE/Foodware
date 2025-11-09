@@ -1,45 +1,60 @@
 package com.example.recipietracker;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class WhatCanICookActivity extends AppCompatActivity implements RecipeAdapter.OnRecipeActionListener {
-    private RecipeAdapter adapter;
-    private DBHelper db;
+import com.google.android.material.appbar.MaterialToolbar;
+
+public class WhatCanICookActivity extends AppCompatActivity {
+
+    private static final String TAG = "WhatCanICookActivity";
+
+    // UI Views
+    private MaterialToolbar toolbar;
+    private EditText ingredientsEditText;
+    private Button searchApiButton;
+    private ProgressBar progressBar;
+    private RecyclerView recyclerView;
+
+    // TODO: Add adapter and list for results
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_what_can_i_cook);
 
-        RecyclerView rv = findViewById(R.id.recyclerRecipes);
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        db = new DBHelper(this);
-        adapter = new RecipeAdapter(db.getAllRecipes(), this);
-        rv.setAdapter(adapter);
+        // Find all the views
+        toolbar = findViewById(R.id.toolbar);
+        ingredientsEditText = findViewById(R.id.ingredientsEditText);
+        searchApiButton = findViewById(R.id.searchApiButton);
+        progressBar = findViewById(R.id.progressBar);
+        recyclerView = findViewById(R.id.apiRecipesRecyclerView);
 
-        EditText etIngredients = findViewById(R.id.etIngredients);
-        Button btnSuggest = findViewById(R.id.btnSuggest);
-        btnSuggest.setOnClickListener(v -> {
-            String input = etIngredients.getText().toString();
-            adapter.updateData(db.suggestByIngredients(input));
+        // Set up the toolbar's back button
+        toolbar.setNavigationOnClickListener(v -> finish());
+
+        // Set up the search button
+        searchApiButton.setOnClickListener(v -> {
+            String ingredients = ingredientsEditText.getText().toString().trim();
+            if (ingredients.isEmpty()) {
+                Toast.makeText(this, "Please enter some ingredients.", Toast.LENGTH_SHORT).show();
+            } else {
+                // We will add the API call logic here
+                Toast.makeText(this, "Searching for recipes with: " + ingredients, Toast.LENGTH_SHORT).show();
+                // We'll call a method like:
+                // searchRecipesByIngredients(ingredients);
+            }
         });
+
+        // TODO: Set up the RecyclerView
     }
 
-    @Override
-    public void onToggleFavorite(Recipe recipe, boolean favorite) {
-        db.toggleFavorite(recipe.getId(), favorite);
-    }
+    // TODO: Add searchRecipesByIngredients(String ingredients) method
 }
-
-
-
-
-
-
-
